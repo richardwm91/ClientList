@@ -18,6 +18,7 @@ public class FormHelper {
         cel = (EditText) activity.findViewById(R.id.etCel);
         points = (RatingBar) activity.findViewById(R.id.rbPoints);
 
+        points.setMax(5);
         client = new Client();
     }
 
@@ -28,10 +29,10 @@ public class FormHelper {
         this.client = client;
     }
 
-    public Client catchCLient() {
+    public Client getClient() {
         client.setName(name.getText().toString());
         client.setCel(cel.getText().toString());
-        client.setPoints((int) points.getRating());
+        client.setPoints(points.getProgress());
 
         return client;
     }

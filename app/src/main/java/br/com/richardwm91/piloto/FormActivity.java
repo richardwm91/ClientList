@@ -24,7 +24,7 @@ public class FormActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         Client client = (Client) intent.getSerializableExtra("client");
-        if(client != null)
+        if (client != null)
             helper.fillOfForm(client);
     }
 
@@ -37,15 +37,18 @@ public class FormActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.menu_form_confirm:
+                Client client = helper.getClient();
 
-                Client client = helper.catchCLient();
                 ClientDAO dao = new ClientDAO(this);
-                dao.insertClient(client);
-                dao.close();
+                if (client.getId() != null) {
+                    dao.updateClient(client);
+                } else {
+                    dao.insertClient(client);
+                }
 
-                Toast.makeText(FormActivity.this, client.getName()+" salvo com sucesso.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(FormActivity.this, client.getName() + " salvo!", Toast.LENGTH_SHORT).show();
                 finish();
                 break;
         }

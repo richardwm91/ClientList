@@ -5,12 +5,16 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.List;
@@ -21,14 +25,19 @@ import br.com.richardwm91.piloto.model.Client;
 public class ListMainActivity extends AppCompatActivity {
 
     private ListView listClients;
-
     private ItemAdapter mItemAdapter;
+    private EditText etQuery;
+
+    private ClientDAO dao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_main);
         listClients = (ListView) findViewById(R.id.listClients);
+        etQuery = (EditText) findViewById(R.id.etQuery);
+
+        dao = new ClientDAO(this);
 
         listClients.setOnItemClickListener(new OnItemClickListener() {
             @Override
@@ -42,21 +51,44 @@ public class ListMainActivity extends AppCompatActivity {
             }
         });
 
-        Button newClient = (Button) findViewById(R.id.btNewClient);
-        newClient.setOnClickListener(new View.OnClickListener() {
+        etQuery.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onClick(View v) {
-                Intent intentGoToForm = new Intent(ListMainActivity.this, FormActivity.class);
-                startActivity(intentGoToForm);
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if(s.toString().isEmpty()){
+                    loadList();
+                } else {
+                    mItemAdapter = new ItemAdapter(ListMainActivity.this, dao.findClientsLike(s.toString()));
+                    listClients.setAdapter(mItemAdapter);
+                }
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_new, menu);
         registerForContextMenu(listClients);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intentGoToForm = new Intent(ListMainActivity.this, FormActivity.class);
+        startActivity(intentGoToForm);
+
+        return false;
     }
 
     private void loadList() {
-        ClientDAO dao = new ClientDAO(this);
         List<Client> clients = dao.findClients();
-        dao.close();
 
         mItemAdapter = new ItemAdapter(this, clients);
         listClients.setAdapter(mItemAdapter);
@@ -75,8 +107,10 @@ public class ListMainActivity extends AppCompatActivity {
         delete.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
+                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+                final Client client = (Client) listClients.getItemAtPosition(info.position);
 
-                new AlertDialog.Builder(ListMainActivity.this).setTitle("Delete").setMessage("Deseja deletar?").setNegativeButton("cancelar", new DialogInterface.OnClickListener() {
+                new AlertDialog.Builder(ListMainActivity.this).setMessage("Deletar cliente: " + client.getName()).setNegativeButton("cancelar", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
@@ -84,13 +118,9 @@ public class ListMainActivity extends AppCompatActivity {
                 }).setPositiveButton("confirmar", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-                        Client client = (Client) listClients.getItemAtPosition(info.position);
 
                         ClientDAO dao = new ClientDAO(ListMainActivity.this);
                         dao.deleteClient(client);
-                        dao.close();
-
                         loadList();
 
                         dialog.dismiss();

@@ -1,6 +1,8 @@
 package br.com.richardwm91.piloto;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +21,12 @@ public class ItemAdapter extends BaseAdapter {
     private Context context;
     private LayoutInflater layoutInflater;
 
-    public ItemAdapter(Context context, List<Client> list){
+    public ItemAdapter(Context context, List<Client> list) {
         this.list = list;
         this.context = context;
 
         layoutInflater = LayoutInflater.from(context);
     }
-
 
     @Override
     public int getCount() {
@@ -58,20 +59,35 @@ public class ItemAdapter extends BaseAdapter {
         rlStars.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(client.getPoints() < 5) {
+                if (client.getPoints() < 5) {
                     client.setPoints(client.getPoints() + 1);
 
-
-                    new ClientDAO(context).insertClient(client);
+                    new ClientDAO(context).updateClient(client);
                     list = new ClientDAO(context).findClients();
+                    notifyDataSetChanged();
+                }else{
+                    new AlertDialog.Builder(context).setMessage("Resgatar corte para:\n" + client.getName())
+                            .setNegativeButton("cancelar", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    }).setPositiveButton("confirmar", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //implementar a chamada do encaminar para:
+                            // zerar pontuação
+                            dialog.dismiss();
+                        }
+                    }).create().show();
                 }
-
-                notifyDataSetChanged();
             }
         });
 
-        if(client.getPoints() == 5)
+        if (client.getPoints() == 5) {
             rlStars.setBackgroundResource(R.drawable.ic_starfull);
+            tvPoint.setVisibility(View.GONE);
+        }
         return convertView;
     }
 }
